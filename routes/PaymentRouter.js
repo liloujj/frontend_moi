@@ -12,3 +12,4 @@ paymentRoutes.post("/cancel", cancelSubscription);
 paymentRoutes.get("/:subscriptionId", getSubscription);
 
 export default paymentRoutes;
+
