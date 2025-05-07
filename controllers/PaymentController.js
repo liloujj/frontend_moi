@@ -186,7 +186,6 @@ export const createSubscription = async (req, res) => {
   try {
     const { patientId, paymentMethodId, priceId } = req.body;
 
-    console.log(patientId)
     // Get patient details
     const patient = await Patient.findById(patientId);
 
@@ -198,7 +197,10 @@ export const createSubscription = async (req, res) => {
     const customer = await stripeClient.customers.create({
       email: patient.email,
       name: patient.name,
-
+      payment_method: paymentMethodId,
+      invoice_settings: {
+        default_payment_method: paymentMethodId,
+      },
       metadata: {
         patientId: patient._id.toString(),
       },
@@ -233,6 +235,21 @@ export const createSubscription = async (req, res) => {
 
     await payment.save();
 
+    const currentDate = new Date();
+    const oneYearFromNow = new Date(
+      currentDate.setFullYear(currentDate.getFullYear() + 1)
+    );
+
+    const newSubscription = new Subscription({
+      subID: subscription.id,
+      patientID: patient._id,
+      startDate: currentDate,
+      expDate: oneYearFromNow,
+      status: "active",
+    });
+
+    await newSubscription.save();
+
     res.status(200).json({
       subscriptionId: subscription.id,
       clientSecret: paymentIntent.client_secret,
@@ -244,8 +261,6 @@ export const createSubscription = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-
 
 
 
@@ -384,3 +399,4 @@ export const getSubscription = async (req, res) => {
     });
   }
 };
+
